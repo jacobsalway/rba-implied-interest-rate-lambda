@@ -1,0 +1,27 @@
+service: rba-implied-interest-rate-lambda
+
+provider:
+  name: aws
+  runtime: python3.8
+
+functions:
+  download-cash-rate-pdf:
+    handler: functions/download-cash-rate-pdf.py
+  convert-pdf-to-png:
+    handler: functions/convert-pdf-to-png.py
+    events:
+      - s3:
+        bucket: cash-rate
+        event: s3:ObjectCreated:*
+        rules:
+          - prefix: pdfs/
+          - suffix: .pdf
+  convert-png-to-csv:
+    handler: functions/convert-png-to-csv.py
+    events:
+      - s3:
+        bucket: cash-rate
+        event: s3:ObjectCreated:*
+        rules:
+          - prefix: pngs/
+          - suffix: .png
