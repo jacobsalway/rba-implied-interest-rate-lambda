@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 s3_client = boto3.client('s3')
 LOCAL_FILE_SYS = '/tmp'
-S3_BUCKET = 'cashrate'
+S3_BUCKET = 'cash-rate'
 
 def _get_key():
     dt_now = datetime.now(tz=timezone.utc)
@@ -30,4 +30,4 @@ def lambda_handler(event, context):
     key = _get_key()
     cashrate_pdf = get_data()
     file_name = write_data(cashrate_pdf, key)
-    s3_client.upload_file(file_name, S3_BUCKET, key)
+    s3_client.upload_file(file_name, S3_BUCKET, 'pdfs/' + key)

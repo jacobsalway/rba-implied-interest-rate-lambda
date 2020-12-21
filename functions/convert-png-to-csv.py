@@ -6,7 +6,9 @@ import boto3
 import uuid
 from urllib.parse import unquote_plus
 
-def download_record(record):
+s3_client = boto3.client('s3')
+
+def download_record(s3_client, record):
     bucket = record['s3']['bucket']['name']
     key = unquote_plus(record['s3']['object']['key'])
     tmpkey = key.replace('/', '')
@@ -17,7 +19,8 @@ def download_record(record):
 
 def crop_and_preprocess(image):
     # crop to interest rate text section
-    image = image.crop((142+1, 855+1, 142+1351-1, 855+54-1))
+    w, h = image.size
+    image = image.crop((137, 844, w, h))
 
     # get rid of one pixel borders that might mess up OCR
     w, h = image.size
@@ -57,19 +60,24 @@ def test_and_convert(text):
         months = list(map(lambda x: datetime.strptime(x, '%b-%y').strftime('%Y-%m-%d'), months))
         rates = list(map(lambda x: str(float(x)), rates))
     except:
-        raise Exception('OCR text does not match expected format')
+        print(months)
+        print(rates)
+        raise Exception('OCR text does not match expected format')  
 
     return months, rates
 
 def lambda_handler(event, context):
     for record in event['Records']:
-        image_path = download_record(record)
+        image_path = download_record(s3_client, record)
         image = Image.open(image_path)
         image = crop_and_preprocess(image)
-        text = pytesseract.image_to_string(im1) # OCR
+        text = pytesseract.image_to_string(image) # OCR
         months, rates = test_and_convert(text)
 
-        with open('test.csv', 'w') as f:
-            f.write(','.join(months))
-            f.write('\n')
-            f.write(','.join(rates))
+        print(months)
+        print(rates)
+
+        # with open('test.csv', 'w') as f:
+        #     f.write(','.join(months))
+        #     f.write('\n')
+        #     f.write(','.join(rates))

@@ -1,27 +1,47 @@
+org: xorana
+app: rba-implied-interest-rate-lambda
 service: rba-implied-interest-rate-lambda
 
 provider:
   name: aws
-  runtime: python3.8
+  runtime: python3.7
+  region: ap-southeast-2
+
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 's3:*'
+      Resource: '*'
 
 functions:
   download-cash-rate-pdf:
-    handler: functions/download-cash-rate-pdf.py
+    handler: functions/download-cash-rate-pdf.lambda_handler
+    events:
+      - schedule:
+          rate: cron(0 10 * * ? *)
+          enabled: true
   convert-pdf-to-png:
-    handler: functions/convert-pdf-to-png.py
+    handler: functions/convert-pdf-to-png.lambda_handler
     events:
       - s3:
-        bucket: cash-rate
-        event: s3:ObjectCreated:*
-        rules:
-          - prefix: pdfs/
-          - suffix: .pdf
+          bucket: ${self:custom.bucket}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: pdfs/
+            - suffix: .pdf
+          existing: true
+    layers:
+      - arn:aws:lambda:ap-southeast-2:823666162236:layer:poppler:3
   convert-png-to-csv:
-    handler: functions/convert-png-to-csv.py
+    handler: functions/convert-png-to-csv.lambda_handler
     events:
       - s3:
-        bucket: cash-rate
-        event: s3:ObjectCreated:*
-        rules:
-          - prefix: pngs/
-          - suffix: .png
+          bucket: ${self:custom.bucket}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: pngs/
+            - suffix: .png
+          existing: true
+    layers:
+      - arn:aws:lambda:ap-southeast-2:823666162236:layer:tesseract:2
+      - arn:aws:lambda:ap-southeast-2:823666162236:layer:pytesseract-pillow:2

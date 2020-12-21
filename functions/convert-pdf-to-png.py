@@ -8,6 +8,15 @@ from subprocess import PIPE, run
 
 s3_client = boto3.client('s3')
 
+def download_record(s3_client, record):
+    bucket = record['s3']['bucket']['name']
+    key = unquote_plus(record['s3']['object']['key'])
+    tmpkey = key.replace('/', '')
+    download_path = '/tmp/{}{}'.format(uuid.uuid4(), tmpkey)
+    s3_client.download_file(bucket, key, download_path)
+
+    return download_path
+
 def lambda_handler(event, context):
     for record in event['Records']:
         bucket = record['s3']['bucket']['name']
@@ -27,5 +36,5 @@ def lambda_handler(event, context):
         correct_file = 'image-' + correct_image_number + '.png'
         
         # upload png to s3
-        png_name = key.split('.')[0] + '.png'
-        s3_client.upload_file('/tmp/' + correct_file, bucket, png_name)
+        png_name = key.split('/')[-1].split('.')[0] + '.png'
+        s3_client.upload_file('/tmp/' + correct_file, bucket, 'pngs/' + png_name)
