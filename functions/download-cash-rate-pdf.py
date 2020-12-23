@@ -1,7 +1,8 @@
 import os
 import urllib3
 import boto3
-from datetime import datetime, timezone
+from datetime import datetime
+from dateutil import tz
 
 s3_client = boto3.client('s3')
 
@@ -9,7 +10,7 @@ LOCAL_FILE_SYS = '/tmp'
 S3_BUCKET = 'cash-rate'
 
 def _get_key():
-    dt_now = datetime.now(tz=timezone.utc)
+    dt_now = datetime.now(tz=tz.gettz('Australia/Sydney'))
     return dt_now.strftime('%Y-%m-%d') + '.pdf'
 
 def get_data():

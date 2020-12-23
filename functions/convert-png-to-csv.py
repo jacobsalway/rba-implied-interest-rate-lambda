@@ -1,12 +1,20 @@
 from PIL import Image
 import PIL.ImageOps
 import pytesseract
-from datetime import datetime, timezone
+from datetime import datetime
 import boto3
 import uuid
 from urllib.parse import unquote_plus
 
 s3_client = boto3.client('s3')
+
+S3_BUCKET = 'cash-rate'
+
+def get_file_name(record):
+    key = unquote_plus(record['s3']['object']['key'])
+    file_name = key.split('/')[-1]
+    
+    return file_name
 
 def download_record(s3_client, record):
     bucket = record['s3']['bucket']['name']
@@ -17,11 +25,14 @@ def download_record(s3_client, record):
 
     return download_path
 
-def crop_and_preprocess(image):
+def crop_to_text(image):
     # crop to interest rate text section
     w, h = image.size
     image = image.crop((137, 844, w, h))
 
+    return image
+
+def strip_borders(image):
     # get rid of one pixel borders that might mess up OCR
     w, h = image.size
     for x in range(w):
@@ -31,11 +42,9 @@ def crop_and_preprocess(image):
             b = image.getpixel((x+1, y)) if x+1 < w else 0
             c = image.getpixel((x+1, y+1)) if x+1 < w and y+1 < h else 0
             d = image.getpixel((x-1, y)) if x-1 >= 0 else 0
+
             if v == 255 and ((a,c) == (0, 0) or (b,d) == (0,0)):
                 image.putpixel((x,y), 0)
-
-    # invert image so text is black on white
-    image = PIL.ImageOps.invert(image)
 
     return image
 
@@ -69,17 +78,28 @@ def test_and_convert(text):
 def lambda_handler(event, context):
     for record in event['Records']:
         image_path = download_record(s3_client, record)
+        file_name = get_file_name(record)
+
         image = Image.open(image_path)
-        image = crop_and_preprocess(image)
-        text = pytesseract.image_to_string(image) # OCR
+
+        image = crop_to_text(image)
+        image = strip_borders(image)
+
+        # invert so text is black on white
+        image = PIL.ImageOps.invert(image)
+
+        # do OCR to convert image to text
+        text = pytesseract.image_to_string(image)
+
         months, rates = test_and_convert(text)
 
-        current_date = datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
-        final_csv = [[current_date, i, j] for i, j in zip(months, rates)]
+        file_date = file_name.split('.')[0]
+        final_csv = [[file_date, i, j] for i, j in zip(months, rates)]
 
         csvname = '/tmp/{}.csv'.format(uuid.uuid4())
         with open(csvname, 'w') as f:
             for row in final_csv:
                 f.write(','.join(row))
                 f.write('\n')
-        s3_client.upload_file(csvname, 'cash-rate', 'csvs/' + current_date + '.csv')
+        
+        s3_client.upload_file(csvname, S3_BUCKET, 'csvs/' + file_date + '.csv')
