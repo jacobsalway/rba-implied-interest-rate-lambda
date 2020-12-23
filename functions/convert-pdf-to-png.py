@@ -15,15 +15,11 @@ def download_record(s3_client, record):
     download_path = '/tmp/{}{}'.format(uuid.uuid4(), tmpkey)
     s3_client.download_file(bucket, key, download_path)
 
-    return download_path
+    return download_path, key
 
 def lambda_handler(event, context):
     for record in event['Records']:
-        bucket = record['s3']['bucket']['name']
-        key = unquote_plus(record['s3']['object']['key'])
-        tmpkey = key.replace('/', '')
-        download_path = '/tmp/{}{}'.format(uuid.uuid4(), tmpkey)
-        s3_client.download_file(bucket, key, download_path)
+        download_path, key = download_record(s3_client, record)
         
         # get images from pdf
         run(['pdfimages', '-png', download_path, '/tmp/image'])

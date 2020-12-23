@@ -1,7 +1,7 @@
 from PIL import Image
 import PIL.ImageOps
 import pytesseract
-from datetime import datetime
+from datetime import datetime, timezone
 import boto3
 import uuid
 from urllib.parse import unquote_plus
@@ -74,10 +74,12 @@ def lambda_handler(event, context):
         text = pytesseract.image_to_string(image) # OCR
         months, rates = test_and_convert(text)
 
-        print(months)
-        print(rates)
+        current_date = datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
+        final_csv = [[current_date, i, j] for i, j in zip(months, rates)]
 
-        # with open('test.csv', 'w') as f:
-        #     f.write(','.join(months))
-        #     f.write('\n')
-        #     f.write(','.join(rates))
+        csvname = '/tmp/{}.csv'.format(uuid.uuid4())
+        with open(csvname, 'w') as f:
+            for row in final_csv:
+                f.write(','.join(row))
+                f.write('\n')
+        s3_client.upload_file(csvname, 'cash-rate', 'csvs/' + current_date + '.csv')

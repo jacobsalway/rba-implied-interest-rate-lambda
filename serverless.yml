@@ -13,6 +13,9 @@ provider:
         - 's3:*'
       Resource: '*'
 
+custom:
+  bucket: cash-rate
+
 functions:
   download-cash-rate-pdf:
     handler: functions/download-cash-rate-pdf.lambda_handler

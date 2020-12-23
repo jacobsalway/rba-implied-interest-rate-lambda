@@ -4,6 +4,7 @@ import boto3
 from datetime import datetime, timezone
 
 s3_client = boto3.client('s3')
+
 LOCAL_FILE_SYS = '/tmp'
 S3_BUCKET = 'cash-rate'
 
