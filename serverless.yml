@@ -13,8 +13,14 @@ provider:
         - 's3:*'
       Resource: '*'
 
+plugins:
+  - serverless-python-requirements
+
 custom:
   bucket: cash-rate
+  pythonRequirements:
+    dockerizePip: true
+    useDownloadCache: false
 
 functions:
   download-cash-rate-pdf:
