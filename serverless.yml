@@ -52,5 +52,5 @@ functions:
             - suffix: .png
           existing: true
     layers:
-      - arn:aws:lambda:ap-southeast-2:823666162236:layer:tesseract:2
+      - arn:aws:lambda:ap-southeast-2:823666162236:layer:tesseract:4
       - arn:aws:lambda:ap-southeast-2:823666162236:layer:pytesseract-pillow:2
