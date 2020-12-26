@@ -16,6 +16,10 @@ provider:
 plugins:
   - serverless-python-requirements
 
+package:
+  include:
+    - common/*
+
 custom:
   bucket: cash-rate
   pythonRequirements:
