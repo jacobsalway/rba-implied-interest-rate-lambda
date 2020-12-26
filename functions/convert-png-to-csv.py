@@ -88,7 +88,7 @@ def lambda_handler(event, context):
                 break
         text[1] = text[1][index:]
 
-        months, rates = test_and_convert(rates)
+        months, rates = test_and_convert(text)
 
         file_date = file_name.split('.')[0]
         final_csv = [[file_date, i, j] for i, j in zip(months, rates)]
