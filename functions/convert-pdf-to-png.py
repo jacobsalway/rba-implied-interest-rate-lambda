@@ -3,7 +3,7 @@ import uuid
 import struct
 from urllib.parse import unquote_plus
 from subprocess import PIPE, run
-from util import get_file_name, download_record
+from common import get_file_name, download_record
 
 s3_client = boto3.client('s3')
 

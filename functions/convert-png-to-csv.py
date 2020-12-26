@@ -4,7 +4,7 @@ import pytesseract
 from datetime import datetime
 import boto3
 import uuid
-from util import get_file_name, download_record
+from common import get_file_name, download_record
 
 s3_client = boto3.client('s3')
 
